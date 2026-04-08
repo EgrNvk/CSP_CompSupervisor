@@ -3,6 +3,7 @@ import socket
 import sys
 import time
 import winreg
+import os
 
 import config
 
@@ -35,6 +36,10 @@ class Client:
 
         if cmd == "wait":
             time.sleep(message.get("sec", config.WAIT_SEC))
+        elif cmd == "shutdown":
+            os.system("shutdown /s /t 0")
+        elif cmd == "powershell":
+            os.system("start powershell")
 
     def _register_autostart(self):
         path = sys.executable if sys.executable.endswith(".exe") else f'"{sys.executable}" "{sys.argv[0]}"'

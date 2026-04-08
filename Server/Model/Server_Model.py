@@ -5,11 +5,13 @@ import pyodbc
 from datetime import datetime
 
 from Server import config
+from Server.commands import Commands
 
 
 class ServerModel:
 
-    def __init__(self):
+    def __init__(self, commands: Commands):
+        self._commands = commands
         self._lock = threading.Lock()
         self._stop_event = threading.Event()
 
@@ -49,7 +51,8 @@ class ServerModel:
             data = conn.recv(1024)
             message = json.loads(data.decode())
             hostname = message.get("hostname", "")
-            conn.sendall(json.dumps({"cmd": "wait", "sec": config.WAIT_SEC}).encode())
+            cmd = self._commands.get(ip)
+            conn.sendall(json.dumps(cmd).encode())
         except Exception:
             pass
         finally:

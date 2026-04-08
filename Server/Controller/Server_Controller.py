@@ -4,13 +4,15 @@ import pyodbc
 from Server import config
 from Server.View.Server_View import View
 from Server.Model.Server_Model import ServerModel
+from Server.commands import Commands
 
 
 class Controller:
 
     def __init__(self):
-        self._view = View()
-        self._model = ServerModel()
+        self._commands = Commands()
+        self._view = View(self)
+        self._model = ServerModel(self._commands)
         self._stop_event = threading.Event()
 
     def start(self):
@@ -21,6 +23,12 @@ class Controller:
     def stop(self):
         self._stop_event.set()
         self._model.stop()
+
+    def on_shutdown(self, ip: str):
+        self._commands.shutdown(ip)
+
+    def on_powershell(self, ip: str):
+        self._commands.powershell(ip)
 
     def _refresh_loop(self):
         while not self._stop_event.wait(config.REFRESH_SEC):
