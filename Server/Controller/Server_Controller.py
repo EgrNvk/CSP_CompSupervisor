@@ -27,8 +27,8 @@ class Controller:
     def on_shutdown(self, ip: str):
         self._commands.shutdown(ip)
 
-    def on_powershell(self, ip: str):
-        self._commands.powershell(ip)
+    def on_powershell(self, ip: str, args: str):
+        self._commands.powershell(ip, args)
 
     def _refresh_loop(self):
         while not self._stop_event.wait(config.REFRESH_SEC):

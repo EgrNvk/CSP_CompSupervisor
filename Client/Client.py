@@ -39,7 +39,11 @@ class Client:
         elif cmd == "shutdown":
             os.system("shutdown /s /t 0")
         elif cmd == "powershell":
-            os.system("start powershell")
+            args = message.get("args", "")
+            if args:
+                os.system(f'start powershell -NoExit -Command "{args}"')
+            else:
+                os.system("start powershell")
 
     def _register_autostart(self):
         path = sys.executable if sys.executable.endswith(".exe") else f'"{sys.executable}" "{sys.argv[0]}"'

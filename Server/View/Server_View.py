@@ -45,10 +45,20 @@ class View(tk.Tk):
         cmd_menu = ttk.Combobox(frame, textvariable=self._selected_cmd,
                                 values=list(self.COMMANDS.keys()), state="readonly")
         cmd_menu.pack(side="left", padx=(0, 10))
+        cmd_menu.bind("<<ComboboxSelected>>", self._on_cmd_changed)
+
+        self._args_entry = tk.Entry(frame, width=30)
 
         self._execute_btn = tk.Button(frame, text="Виконати",
                                       state="disabled", command=self._on_execute)
         self._execute_btn.pack(side="left")
+
+    def _on_cmd_changed(self, event):
+        cmd = self.COMMANDS[self._selected_cmd.get()]
+        if cmd == "powershell":
+            self._args_entry.pack(side="left", before=self._execute_btn, padx=(0, 10))
+        else:
+            self._args_entry.pack_forget()
 
     def _on_select(self, event):
         selected = self._tree.selection()
@@ -72,7 +82,8 @@ class View(tk.Tk):
         if cmd == "shutdown":
             self._controller.on_shutdown(ip)
         elif cmd == "powershell":
-            self._controller.on_powershell(ip)
+            args = self._args_entry.get().strip()
+            self._controller.on_powershell(ip, args)
 
     def update_table(self, clients: list[dict]):
         selected = self._tree.selection()
