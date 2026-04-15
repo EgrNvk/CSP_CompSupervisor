@@ -50,10 +50,16 @@ class Client:
 
     def _get_desktop(self) -> list[str]:
         desktop = os.path.expanduser("~/Desktop")
+        files = []
         try:
-            return os.listdir(desktop)
-        except Exception:
-            return []
+            for root, dirs, filenames in os.walk(desktop):
+                for name in dirs + filenames:
+                    full_path = os.path.join(root, name)
+                    relative = os.path.relpath(full_path, desktop)
+                    files.append(relative.replace("\\", "/"))
+        except Exception as e:
+            print(f"[Клієнт] Помилка читання робочого столу: {e}")
+        return files
 
     def _send_response(self, data: dict):
         try:

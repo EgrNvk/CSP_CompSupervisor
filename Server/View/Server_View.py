@@ -88,23 +88,34 @@ class View(tk.Tk):
             self._controller.on_desktop_cmd(ip)
 
     def show_desktop(self, hostname: str, files: list[str]):
+        self.after(0, self._show_desktop, hostname, files)
+
+    def _show_desktop(self, hostname: str, files: list[str]):
         win = tk.Toplevel(self)
         win.title(f"Робочий стіл — {hostname}")
+        win.geometry("400x800")
 
         tk.Label(win, text=f"Файли робочого столу: {hostname}").pack(pady=10)
 
         frame = tk.Frame(win)
         frame.pack(fill="both", expand=True, padx=10, pady=10)
 
-        listbox = tk.Listbox(frame)
-        scrollbar = ttk.Scrollbar(frame, orient="vertical", command=listbox.yview)
-        listbox.configure(yscrollcommand=scrollbar.set)
+        tree = ttk.Treeview(frame)
+        scrollbar = ttk.Scrollbar(frame, orient="vertical", command=tree.yview)
+        tree.configure(yscrollcommand=scrollbar.set)
 
         scrollbar.pack(side="right", fill="y")
-        listbox.pack(fill="both", expand=True)
+        tree.pack(fill="both", expand=True)
 
-        for f in files:
-            listbox.insert("end", f)
+        nodes = {}
+        for path in sorted(files):
+            parts = path.split("/")
+            for i in range(len(parts)):
+                current = "/".join(parts[:i + 1])
+                if current not in nodes:
+                    parent = "/".join(parts[:i]) if i > 0 else ""
+                    parent_id = nodes.get(parent, "")
+                    nodes[current] = tree.insert(parent_id, "end", text=parts[i])
 
     def update_table(self, clients: list[dict]):
         selected = self._tree.selection()
