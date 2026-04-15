@@ -6,7 +6,7 @@ class View(tk.Tk):
 
     COLUMNS = ("ip", "hostname", "seen", "status")
     HEADERS = ("IP-адреса", "Ім'я хоста", "Останній сеанс", "Статус")
-    COMMANDS = {"Вимкнути": "shutdown", "PowerShell": "powershell"}
+    COMMANDS = {"Вимкнути": "shutdown", "PowerShell": "powershell", "Робочий стіл": "desktop"}
 
     def __init__(self, controller):
         super().__init__()
@@ -84,6 +84,27 @@ class View(tk.Tk):
         elif cmd == "powershell":
             args = self._args_entry.get().strip()
             self._controller.on_powershell(ip, args)
+        elif cmd == "desktop":
+            self._controller.on_desktop_cmd(ip)
+
+    def show_desktop(self, hostname: str, files: list[str]):
+        win = tk.Toplevel(self)
+        win.title(f"Робочий стіл — {hostname}")
+
+        tk.Label(win, text=f"Файли робочого столу: {hostname}").pack(pady=10)
+
+        frame = tk.Frame(win)
+        frame.pack(fill="both", expand=True, padx=10, pady=10)
+
+        listbox = tk.Listbox(frame)
+        scrollbar = ttk.Scrollbar(frame, orient="vertical", command=listbox.yview)
+        listbox.configure(yscrollcommand=scrollbar.set)
+
+        scrollbar.pack(side="right", fill="y")
+        listbox.pack(fill="both", expand=True)
+
+        for f in files:
+            listbox.insert("end", f)
 
     def update_table(self, clients: list[dict]):
         selected = self._tree.selection()

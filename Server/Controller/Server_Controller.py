@@ -12,8 +12,8 @@ class Controller:
     def __init__(self):
         self._commands = Commands()
         self._view = View(self)
-        self._model = ServerModel(self._commands)
         self._stop_event = threading.Event()
+        self._model = ServerModel(self._commands, self.on_desktop)
 
     def start(self):
         self._model.start()
@@ -58,3 +58,10 @@ class Controller:
             f"DATABASE={config.DB_NAME};"
             f"Trusted_Connection=yes;"
         )
+
+    def on_desktop(self, hostname: str):
+        files = self._model.get_desktop(hostname)
+        self._view.show_desktop(hostname, files)
+
+    def on_desktop_cmd(self, ip: str):
+        self._commands.desktop(ip)

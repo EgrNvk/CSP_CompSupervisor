@@ -16,3 +16,10 @@ CREATE TABLE [clients] (
         END
     )
 );
+
+CREATE TABLE [desktop_files] (
+    [id] INT IDENTITY(1,1) PRIMARY KEY,
+    [client_id] INT NOT NULL REFERENCES clients(id),
+    [name] NVARCHAR(255) NOT NULL,
+    [received] DATETIME NOT NULL
+);
