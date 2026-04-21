@@ -6,7 +6,12 @@ class View(tk.Tk):
 
     COLUMNS = ("ip", "hostname", "seen", "status")
     HEADERS = ("IP-адреса", "Ім'я хоста", "Останній сеанс", "Статус")
-    COMMANDS = {"Вимкнути": "shutdown", "PowerShell": "powershell", "Робочий стіл": "desktop"}
+    COMMANDS = {
+        "Вимкнути": "shutdown",
+        "PowerShell": "powershell",
+        "Робочий стіл": "desktop",
+        "Надіслати файл": "file_to_send"
+    }
 
     def __init__(self, controller):
         super().__init__()
@@ -55,7 +60,7 @@ class View(tk.Tk):
 
     def _on_cmd_changed(self, event):
         cmd = self.COMMANDS[self._selected_cmd.get()]
-        if cmd == "powershell":
+        if cmd in ("powershell", "file_to_send"):
             self._args_entry.pack(side="left", before=self._execute_btn, padx=(0, 10))
         else:
             self._args_entry.pack_forget()
@@ -86,6 +91,12 @@ class View(tk.Tk):
             self._controller.on_powershell(ip, args)
         elif cmd == "desktop":
             self._controller.on_desktop_cmd(ip)
+        elif cmd == "file_to_send":
+            file_path = self._args_entry.get().strip()
+            if file_path:
+                self._controller.on_file_to_send(ip, file_path)
+            else:
+                print("[Server GUI] Поле шляху порожнє, команду не створено")
 
     def show_desktop(self, hostname: str, files: list[str]):
         self.after(0, self._show_desktop, hostname, files)

@@ -16,3 +16,11 @@ class Commands:
 
     def desktop(self, ip: str):
         self._commands[ip] = {"cmd": "desktop"}
+
+    def file_to_send(self, ip: str, file_name: str, file_type: str, file_size: int):
+        self._commands[ip] = {
+            "cmd": "file_to_send",
+            "file_name": file_name,
+            "file_type": file_type,
+            "file_size": file_size
+        }

